@@ -41,6 +41,7 @@ INSTALLED_APPS = [
     # Internal Components
     'achievements',
     'activity_calendar',
+    'committees',
     'membership_file',
 ]
 

@@ -25,6 +25,8 @@ urlpatterns = [
     # Activity Calendar
     path('calendar/', include('activity_calendar.urls-frontend')),
     path('api/calendar/', include('activity_calendar.urls-api')),
+    # Committees
+    path('committees/',include('committees.urls_frontend')),
     # Membership File
     path('members/', include('membership_file.urls_frontend')),
     path('api/members/', include('membership_file.urls_api')),

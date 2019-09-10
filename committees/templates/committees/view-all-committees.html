@@ -1,0 +1,16 @@
+{% extends 'committees/base.html' %}
+
+{% block content %}
+	<h1>The committees of the Knights:</h1>
+	{% for committee in committees %}
+    <h3>{{committee.name}} ({{committee.abbreviation}}): {{committee.description}}</h3>
+    {% for member in committee.members %}
+
+      <p>{{member.first_name}}{% if member.tussenvoegsel != None%} {{member.tussenvoegsel}}{%endif%} {{member.last_name}}</p>
+    {% empty %}
+    {% endfor %}
+
+  {% empty %}
+    <p>There are no committees, The Knights have turned into an absolute democracy!</p>
+  {% endfor %}
+{% endblock %}
