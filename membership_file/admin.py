@@ -2,6 +2,13 @@ from django.contrib import admin
 from .models import Member, MemberLog, MemberLogField
 from django.utils.html import format_html
 
+class DisableBulkDelete(admin.ModelAdmin):
+    # Disable the "Bulk Delete" action while keeping the other ones enabled
+    def get_actions(self, request):
+        actions = super().get_actions(request)
+        if 'delete_selected' in actions:
+            del actions['delete_selected']
+        return actions
 
 class HideRelatedNameAdmin(admin.ModelAdmin):
     class Media:
@@ -41,7 +48,7 @@ class MemberLogReadOnlyInline(DisableModifications, admin.TabularInline):
     get_url.short_description = 'Details'
 
 # Ensures that the last_updated_by field is also updated properly from the Django admin panel
-class MemberWithLog(HideRelatedNameAdmin):
+class MemberWithLog(HideRelatedNameAdmin, DisableBulkDelete):
 
     list_display = ('id', 'user', 'first_name', 'tussenvoegsel', 'last_name', 'educational_institution', 'is_deregistered', 'marked_for_deletion')
     list_filter = ['educational_institution', 'is_deregistered', 'marked_for_deletion']
@@ -101,7 +108,7 @@ class MemberLogFieldReadOnlyInline(DisableModifications, admin.TabularInline):
     can_delete = False
 
 # Prevents MemberLog creation, edting, or deletion in the Django Admin Panel
-class MemberLogReadOnly(DisableModifications, HideRelatedNameAdmin):
+class MemberLogReadOnly(DisableModifications, HideRelatedNameAdmin, DisableBulkDelete):
     # Show the date at which the information was updated as well
     readonly_fields = ['date']
     list_display = ('id', 'log_type', 'user', 'member', 'date')
