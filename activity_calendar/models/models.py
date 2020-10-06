@@ -13,10 +13,6 @@ from core.models import ExtendedUser as User, PresetImage
 # Models related to the Calendar-functionality of the application.
 # @since 29 JUN 2019
 
-# Not now, but a later time (used as a default value below)
-def later_rounded():
-    return now_rounded() + timezone.timedelta(hours=2)
-
 # Rounds the current time (used as a default value below)
 def now_rounded():
     return timezone.now().replace(minute=0, second=0)
@@ -63,9 +59,6 @@ class Activity(models.Model):
     
     subscriptions_required = models.BooleanField(default=True,
         help_text="People are only allowed to go to the activity if they register beforehand")
-
-    # auto_create_first_slot = models.BooleanField(default=True,
-    #     help_text="The first slot is automatically created if someone registers for the activity.")
 
     # Possible slot-creation options:
     # - Never: Slots can only be created in the admin panel

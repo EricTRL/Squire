@@ -118,7 +118,7 @@ class Migration(migrations.Migration):
         migrations.AlterField(
             model_name='activity',
             name='published_date',
-            field=models.DateTimeField(default=activity_calendar.models.now_rounded),
+            field=models.DateTimeField(default=activity_calendar.models.models.now_rounded),
         ),
         migrations.AlterField(
             model_name='activity',
