@@ -18,11 +18,14 @@ from django.conf.urls.static import static
 from django.contrib import admin
 from django.urls import path, include
 
+from activity_calendar.admin_views import admin_site
+
 urlpatterns = [
     #Change Language helper view
     path('i18n/', include('django.conf.urls.i18n')),
     # Admin Panel
-    path('admin/', admin.site.urls),
+    path('admin/', admin_site.urls),
+    # path('admin/', admin.site.urls),
     # Achievements
     path('', include('achievements.urls')),
     # Activity Calendar

@@ -2,7 +2,10 @@ from django.conf import settings
 from django.core.validators import MinValueValidator, ValidationError
 from django.db import models
 from django.db.models import Count
+from django.urls import reverse
 from django.utils import timezone
+from django.utils.http import urlencode
+
 
 from membership_file.util import user_to_member
 
@@ -45,6 +48,13 @@ class Activity(models.Model):
     # Recurrence information (e.g. a weekly event)
     # This means we do not need to store (nor create!) recurring activities separately
     recurrences = RecurrenceField(blank=True, default="")
+
+    # To allow overriding a single field (E.g. a one-time alternative location, start time, etc.)
+    # we need a way to refer to/from our original activity. This is done using a recurrence_id according to the iCal specification.
+    # Behaviour of recurrence_id is the same as the recurrence_id for slots.
+    parent_activity = models.ForeignKey('Activity', related_name="exception_occurence_set",
+            on_delete=models.CASCADE, blank=True, null=True)
+    recurrence_id = models.DateTimeField(blank=True, null=True, verbose_name="parent activity date/time")
 
     # Maximum number of participants/slots
     # -1 denotes unlimited
@@ -91,6 +101,17 @@ class Activity(models.Model):
         if self.image is None:
             return f'{settings.STATIC_URL}images/activity_default.png'
         return self.image.image.url
+
+    def get_absolute_url(self):
+        if self.is_recurring:
+            return None
+
+        if self.parent_activity is not None:
+            q_str = urlencode({'date': self.parent_activity.recurrence_id.isoformat()})
+        else:
+            q_str = urlencode({'date': self.start_date.isoformat()})
+
+        return f"{reverse('activity_calendar:activity_slots_on_day', kwargs={'activity_id': self.id})}?{q_str}"
 
     # Participants already subscribed
     def get_subscribed_participants(self, recurrence_id=None):
@@ -300,10 +321,26 @@ class Activity(models.Model):
             # Attempting to exclude dates if no recurrence is specified
             if not r.rrules and (r.exrules or r.exdates):
                 recurrence_errors.append('Cannot exclude dates if the activity is non-recurring')
-                
+            
+            # Attempting to set recurrence rules if the activity has a parent activity
+            if self.parent_activity is not None or self.recurrence_id is not None:
+                recurrence_errors.append('Cannot set recurrence rules for occurences of an activity')
+
             if recurrence_errors:
                 errors.update({'recurrences': recurrence_errors})
-
+        
+        if (self.parent_activity is not None and self.recurrence_id is None) \
+                or (self.parent_activity is None and self.recurrence_id is not None):
+            # Attempting to set either the parent_activity or recurrence_id, but not both
+            errors.update({'parent_activity': 'Must set a parent activity if setting a recurrence id (and vice versa)'})
+        elif self.parent_activity is not None:
+            if self.parent_activity.parent_activity is not None:
+                # Attempting to provide a parent activity that already has a parent activity
+                errors.update({'parent_activity': 'Parent activity cannot have a parent activity'})
+            elif not self.parent_activity.has_occurence_at(self.recurrence_id):
+                # Attempting to provide an invalid recurrence_id
+                errors.update({'recurrence_id': 'Parent activity has no occurence at the given date/time'})
+                
         if errors:
             raise ValidationError(errors)
         
@@ -326,7 +363,7 @@ class ActivitySlot(models.Model):
     # NB: The slot belongs to just a single _occurence_ of a (recurring) activity.
     #   Hence, we need to store both the foreign key and a date representing one if its occurences
     # TODO: Create a widget for the parent_activity_recurrence so editing is a bit more user-friendly
-    parent_activity = models.ForeignKey(Activity, related_name="parent_activity", on_delete=models.CASCADE)
+    parent_activity = models.ForeignKey(Activity, related_name="activity_slot_set", on_delete=models.CASCADE)
     recurrence_id = models.DateTimeField(blank=True, null=True,
         help_text="If the activity is recurring, set this to the date/time of one of its occurences. Leave this field empty if the parent activity is non-recurring.",
         verbose_name="parent activity date/time")

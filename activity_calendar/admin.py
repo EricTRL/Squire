@@ -1,7 +1,7 @@
 from django.contrib import admin
 from .models import Activity, ActivitySlot, Participant
 
-
+from .admin_views import *
 
 class ActivityAdmin(admin.ModelAdmin):
     def is_recurring(self, obj):
