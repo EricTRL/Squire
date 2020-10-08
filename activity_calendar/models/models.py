@@ -13,17 +13,41 @@ from recurrence.fields import RecurrenceField
 
 from core.models import ExtendedUser as User, PresetImage
 
+######################################################################
+# TODO: Split this file up; it is too large!
 # Models related to the Calendar-functionality of the application.
 # @since 29 JUN 2019
+######################################################################
 
 # Rounds the current time (used as a default value below)
 def now_rounded():
     return timezone.now().replace(minute=0, second=0)
 
+# Allows handling a collection of activities as a single activity
+# Used to provide a natural grouping of activities and their exceptions (E.g. a one-time different start time)
+class CompoundActivity(models.Model):
+    class Meta:
+        verbose_name_plural = "compound activities"
+
+    name = models.CharField(max_length=255)
+    description = models.TextField()
+    is_active = models.BooleanField(default=True)
+
+
 # The Activity model represents an activity in the calendar
 class Activity(models.Model):
     class Meta:
         verbose_name_plural = "activities"
+
+    # The Compound the activity belongs to
+    compound = models.ForeignKey(CompoundActivity, related_name="elements", on_delete=models.CASCADE)
+
+    # To allow overriding a single field (E.g. a one-time alternative location, start time, etc.)
+    # we need a way to refer to/from our original activity. This is done using a recurrence_id according to the iCal specification.
+    # Behaviour of recurrence_id is the same as the recurrence_id for slots.
+    parent_activity = models.ForeignKey('Activity', related_name="exception_occurence_set",
+            on_delete=models.CASCADE, blank=True, null=True)
+    recurrence_id = models.DateTimeField(blank=True, null=True, verbose_name="parent activity date/time")
 
     # The User that created the activity
     author = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, blank=True, null=True)
@@ -48,13 +72,6 @@ class Activity(models.Model):
     # Recurrence information (e.g. a weekly event)
     # This means we do not need to store (nor create!) recurring activities separately
     recurrences = RecurrenceField(blank=True, default="")
-
-    # To allow overriding a single field (E.g. a one-time alternative location, start time, etc.)
-    # we need a way to refer to/from our original activity. This is done using a recurrence_id according to the iCal specification.
-    # Behaviour of recurrence_id is the same as the recurrence_id for slots.
-    parent_activity = models.ForeignKey('Activity', related_name="exception_occurence_set",
-            on_delete=models.CASCADE, blank=True, null=True)
-    recurrence_id = models.DateTimeField(blank=True, null=True, verbose_name="parent activity date/time")
 
     # Maximum number of participants/slots
     # -1 denotes unlimited
@@ -106,8 +123,8 @@ class Activity(models.Model):
         if self.is_recurring:
             return None
 
-        if self.parent_activity is not None:
-            q_str = urlencode({'date': self.parent_activity.recurrence_id.isoformat()})
+        if self.recurrence_id is not None:
+            q_str = urlencode({'date': self.recurrence_id.isoformat()})
         else:
             q_str = urlencode({'date': self.start_date.isoformat()})
 

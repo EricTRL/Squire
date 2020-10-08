@@ -7,7 +7,7 @@ from django.urls import path
 from django.utils.text import capfirst
 from django.utils.translation import gettext as _
 
-from .models import Activity
+from .models import Activity, CompoundActivity
 
 class CustomAdminSite(admin.AdminSite):
     pass
@@ -57,3 +57,4 @@ class ActivityAdmin(admin.ModelAdmin):
 
 admin_site = CustomAdminSite(name='admin_site')
 admin_site.register(Activity, ActivityAdmin)
+admin_site.register(CompoundActivity)

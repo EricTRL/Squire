@@ -1,1 +1,1 @@
-from .models import Activity, ActivitySlot, Participant
+from .models import Activity, CompoundActivity, ActivitySlot, Participant
