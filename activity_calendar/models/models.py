@@ -33,6 +33,9 @@ class CompoundActivity(models.Model):
     description = models.TextField()
     is_active = models.BooleanField(default=True)
 
+    def __str__(self):
+        return self.name
+
 
 # The Activity model represents an activity in the calendar
 class Activity(models.Model):

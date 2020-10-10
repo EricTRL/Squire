@@ -3,17 +3,6 @@ from .models import Activity, ActivitySlot, Participant
 
 from .admin_views import *
 
-class ActivityAdmin(admin.ModelAdmin):
-    def is_recurring(self, obj):
-        return obj.is_recurring        
-    is_recurring.boolean = True
-
-    list_display = ('id', 'title', 'start_date', 'is_recurring', 'subscriptions_required', )
-    list_filter = ['subscriptions_required']
-    list_display_links = ('id', 'title')
-
-admin.site.register(Activity, ActivityAdmin)
-
 class ParticipantInline(admin.TabularInline):
     model = Participant
     extra = 0
